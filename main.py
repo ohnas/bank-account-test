@@ -47,4 +47,86 @@ def get_bank_account_info():
         print(PE)
 
 
-get_bank_account_info()
+def request_job():
+    try:
+        CorpNum = "1468701679"
+        BankCode = "0004"
+        AccountNumber = "67493700004937"
+        SDate = "20240607"
+        EDate = "20240607"
+        UserID = "rdmts7"
+        result = easyFinBankService.requestJob(
+            CorpNum=CorpNum,
+            BankCode=BankCode,
+            AccountNumber=AccountNumber,
+            SDate=SDate,
+            EDate=EDate,
+            UserID=UserID,
+        )
+        return result
+    except PopbillException as PE:
+        print(PE)
+
+
+def get_job_state():
+    try:
+        CorpNum = "1468701679"
+        JobID = request_job()
+        UserID = "rdmts7"
+        result = easyFinBankService.getJobState(
+            CorpNum=CorpNum,
+            JobID=JobID,
+            UserID=UserID,
+        )
+        return result.jobState
+    except PopbillException as PE:
+        print(PE)
+
+
+def account_search():
+    try:
+        CorpNum = "1468701679"
+        JobID = request_job()
+        JobState = get_job_state()
+        TradeType = ["I", "O"]
+        SearchString = ""
+        Page = 1
+        Perpage = 500
+        Order = "D"
+        UserID = "rdmts7"
+        if JobState == 3:
+            result = easyFinBankService.search(
+                CorpNum=CorpNum,
+                JobID=JobID,
+                UserID=UserID,
+                TradeType=TradeType,
+                SearchString=SearchString,
+                Page=Page,
+                PerPage=Perpage,
+                Order=Order,
+            )
+            print(result.code)
+            print(result.message)
+            print(result.total)
+            print(result.perPage)
+            print(result.pageNum)
+            print(result.pageCount)
+            print(result.balance)
+            for l in result.list:
+                print(l.tid)
+                print(l.trdate)
+                print(l.trseral)
+                print(l.trdt)
+                print(l.accIn)
+                print(l.accOut)
+                print(l.balance)
+                print(l.remark1)
+                print(l.remark2)
+                print(l.remark3)
+                print(l.remark4)
+                print(l.regDT)
+    except PopbillException as PE:
+        print(PE)
+
+
+account_search()
