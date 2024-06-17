@@ -1,6 +1,9 @@
 import os
+import logging
 from dotenv import load_dotenv
 from popbill import EasyFinBankService, PopbillException
+from sheets import append_values
+from tools import format_converter
 
 load_dotenv()
 
@@ -27,105 +30,87 @@ easyFinBankService.UseStaticIP = USE_STATIC_IP
 easyFinBankService.UseLocalTimeYN = USE_LOCAL_TIME_YN
 
 
-def get_bank_account_info():
-    try:
-        CorpNum = "1468701679"
-        BankCode = "0004"
-        AccountNumber = "67493700004937"
-        UserID = "rdmts7"
-        result = easyFinBankService.getBankAccountInfo(
-            CorpNum=CorpNum,
-            BankCode=BankCode,
-            AccountNumber=AccountNumber,
-            UserID=UserID,
-        )
-        print(result.state)
-        print(result.accountNumber)
-        print(result.accountType)
-    except PopbillException as PE:
-        print(PE)
-
-
 def request_job():
     try:
-        CorpNum = "1468701679"
-        BankCode = "0004"
-        AccountNumber = "67493700004937"
-        SDate = "20240607"
-        EDate = "20240607"
-        UserID = "rdmts7"
+        corp_num = "1468701679"
+        bank_code = "0004"
+        account_number = "67493700004937"
+        s_date = "20240601"
+        e_date = "20240616"
+        user_id = "rdmts7"
         result = easyFinBankService.requestJob(
-            CorpNum=CorpNum,
-            BankCode=BankCode,
-            AccountNumber=AccountNumber,
-            SDate=SDate,
-            EDate=EDate,
-            UserID=UserID,
+            CorpNum=corp_num,
+            BankCode=bank_code,
+            AccountNumber=account_number,
+            SDate=s_date,
+            EDate=e_date,
+            UserID=user_id,
         )
         return result
     except PopbillException as PE:
-        print(PE)
+        logging.error(PE)
 
 
 def get_job_state():
     try:
-        CorpNum = "1468701679"
-        JobID = request_job()
-        UserID = "rdmts7"
+        job_id = request_job()
+        corp_num = "1468701679"
+        user_id = "rdmts7"
         result = easyFinBankService.getJobState(
-            CorpNum=CorpNum,
-            JobID=JobID,
-            UserID=UserID,
+            CorpNum=corp_num,
+            JobID=job_id,
+            UserID=user_id,
         )
-        return result.jobState
+        return job_id, result.jobState
     except PopbillException as PE:
-        print(PE)
+        logging.error(PE)
 
 
 def account_search():
     try:
-        CorpNum = "1468701679"
-        JobID = request_job()
-        JobState = get_job_state()
-        TradeType = ["I", "O"]
-        SearchString = ""
-        Page = 1
-        Perpage = 500
-        Order = "D"
-        UserID = "rdmts7"
-        if JobState == 3:
-            result = easyFinBankService.search(
-                CorpNum=CorpNum,
-                JobID=JobID,
-                UserID=UserID,
-                TradeType=TradeType,
-                SearchString=SearchString,
-                Page=Page,
-                PerPage=Perpage,
-                Order=Order,
+        job_id, job_state = get_job_state()
+        corp_num = "1468701679"
+        trade_type = ["I", "O"]
+        search_string = ""
+        page = 1
+        per_page = 500
+        order = "A"
+        user_id = "rdmts7"
+        if job_state == 3:
+            results = easyFinBankService.search(
+                CorpNum=corp_num,
+                JobID=job_id,
+                UserID=user_id,
+                TradeType=trade_type,
+                SearchString=search_string,
+                Page=page,
+                PerPage=per_page,
+                Order=order,
             )
-            print(result.code)
-            print(result.message)
-            print(result.total)
-            print(result.perPage)
-            print(result.pageNum)
-            print(result.pageCount)
-            print(result.balance)
-            for l in result.list:
-                print(l.tid)
-                print(l.trdate)
-                print(l.trseral)
-                print(l.trdt)
-                print(l.accIn)
-                print(l.accOut)
-                print(l.balance)
-                print(l.remark1)
-                print(l.remark2)
-                print(l.remark3)
-                print(l.remark4)
-                print(l.regDT)
+            for result in results.list:
+                try:
+                    values = [
+                        [
+                            result.tid,
+                            format_converter(result.trdate),
+                            result.trseral,
+                            format_converter(result.trdt),
+                            result.accIn,
+                            result.accOut,
+                            result.balance,
+                            result.remark1,
+                            result.remark2,
+                            result.remark3,
+                            result.remark4,
+                            result.regDT,
+                            result.memo,
+                        ]
+                    ]
+                    append_values(values)
+                except Exception as err:
+                    logging.error(err)
     except PopbillException as PE:
-        print(PE)
+        logging.error(PE)
 
 
 account_search()
