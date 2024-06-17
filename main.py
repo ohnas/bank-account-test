@@ -2,7 +2,6 @@ import os
 from dotenv import load_dotenv
 from popbill import EasyFinBankService, PopbillException
 
-# load .env
 load_dotenv()
 
 LINK_ID = os.environ.get("LinkID")
