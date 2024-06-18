@@ -1,9 +1,9 @@
 import os
-import logging
+import time
 from dotenv import load_dotenv
 from popbill import EasyFinBankService, PopbillException
-from sheets import append_values
-from tools import format_converter
+from sheets import append_values, append_logs
+from tools import format_converter, get_yesterday
 
 load_dotenv()
 
@@ -29,14 +29,16 @@ easyFinBankService.UseStaticIP = USE_STATIC_IP
 # 로컬시스템 시간 사용여부, 권장(True)
 easyFinBankService.UseLocalTimeYN = USE_LOCAL_TIME_YN
 
+YESTERDAY = get_yesterday()
+
 
 def request_job():
     try:
         corp_num = "1468701679"
         bank_code = "0004"
         account_number = "67493700004937"
-        s_date = "20240601"
-        e_date = "20240616"
+        s_date = YESTERDAY
+        e_date = YESTERDAY
         user_id = "rdmts7"
         result = easyFinBankService.requestJob(
             CorpNum=corp_num,
@@ -48,7 +50,7 @@ def request_job():
         )
         return result
     except PopbillException as PE:
-        logging.error(PE)
+        append_logs(YESTERDAY, "fail", PE, "request_job", "Popbill")
 
 
 def get_job_state():
@@ -63,7 +65,7 @@ def get_job_state():
         )
         return job_id, result.jobState
     except PopbillException as PE:
-        logging.error(PE)
+        append_logs(YESTERDAY, "fail", PE, "get_job_state", "Popbill")
 
 
 def account_search():
@@ -106,11 +108,19 @@ def account_search():
                             result.memo,
                         ]
                     ]
+                    print(values)
                     append_values(values)
                 except Exception as err:
-                    logging.error(err)
+                    append_logs(
+                        YESTERDAY, "fail", err, "account_search_list", "Popbill"
+                    )
+                finally:
+                    time.sleep(1)
+            append_logs(
+                YESTERDAY, "success", results.total, "account_search_list", "Popbill"
+            )
     except PopbillException as PE:
-        logging.error(PE)
+        append_logs(YESTERDAY, "fail", PE, "account_search", "Popbill")
 
 
 account_search()
