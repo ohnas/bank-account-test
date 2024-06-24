@@ -89,33 +89,33 @@ def account_search():
                 PerPage=per_page,
                 Order=order,
             )
-            for result in results.list:
-                try:
-                    values = [
-                        [
-                            result.tid,
-                            format_converter(result.trdate),
-                            result.trseral,
-                            format_converter(result.trdt),
-                            result.accIn,
-                            result.accOut,
-                            result.balance,
-                            result.remark1,
-                            result.remark2,
-                            result.remark3,
-                            result.remark4,
-                            result.regDT,
-                            result.memo,
+            if results.list:
+                for result in results.list:
+                    try:
+                        values = [
+                            [
+                                result.tid,
+                                format_converter(result.trdate),
+                                result.trseral,
+                                format_converter(result.trdt),
+                                result.accIn,
+                                result.accOut,
+                                result.balance,
+                                result.remark1,
+                                result.remark2,
+                                result.remark3,
+                                result.remark4,
+                                result.regDT,
+                                result.memo,
+                            ]
                         ]
-                    ]
-                    print(values)
-                    append_values(values)
-                except Exception as err:
-                    append_logs(
-                        YESTERDAY, "fail", err, "account_search_list", "Popbill"
-                    )
-                finally:
-                    time.sleep(1)
+                        append_values(values)
+                    except Exception as err:
+                        append_logs(
+                            YESTERDAY, "fail", err, "account_search_list", "Popbill"
+                        )
+                    finally:
+                        time.sleep(1)
             append_logs(
                 YESTERDAY, "success", results.total, "account_search_list", "Popbill"
             )
