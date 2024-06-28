@@ -29,10 +29,9 @@ easyFinBankService.UseStaticIP = USE_STATIC_IP
 # 로컬시스템 시간 사용여부, 권장(True)
 easyFinBankService.UseLocalTimeYN = USE_LOCAL_TIME_YN
 
-YESTERDAY = get_yesterday()
-
 
 def request_job():
+    YESTERDAY = get_yesterday()
     try:
         corp_num = "1468701679"
         bank_code = "0004"
@@ -54,6 +53,7 @@ def request_job():
 
 
 def get_job_state():
+    YESTERDAY = get_yesterday()
     try:
         job_id = request_job()
         corp_num = "1468701679"
@@ -69,6 +69,9 @@ def get_job_state():
 
 
 def account_search():
+
+    YESTERDAY = get_yesterday()
+
     try:
         job_id, job_state = get_job_state()
         corp_num = "1468701679"
