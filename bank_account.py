@@ -29,9 +29,10 @@ easyFinBankService.UseStaticIP = USE_STATIC_IP
 # 로컬시스템 시간 사용여부, 권장(True)
 easyFinBankService.UseLocalTimeYN = USE_LOCAL_TIME_YN
 
+YESTERDAY = get_yesterday()
+
 
 def request_job():
-    YESTERDAY = get_yesterday()
     try:
         corp_num = "1468701679"
         bank_code = "0004"
@@ -50,30 +51,49 @@ def request_job():
         return result
     except PopbillException as PE:
         append_logs(YESTERDAY, "fail", PE, "request_job", "Popbill")
+        return None
 
 
 def get_job_state():
-    YESTERDAY = get_yesterday()
     try:
         job_id = request_job()
+        if job_id is None:
+            return None, None
+
         corp_num = "1468701679"
         user_id = "rdmts7"
-        result = easyFinBankService.getJobState(
-            CorpNum=corp_num,
-            JobID=job_id,
-            UserID=user_id,
-        )
-        return job_id, result.jobState
+
+        while True:
+            result = easyFinBankService.getJobState(
+                CorpNum=corp_num,
+                JobID=job_id,
+                UserID=user_id,
+            )
+            print("get_job_state", result.jobState)
+            if result.jobState == 3:
+                return job_id, result.jobState
+            elif result.jobState in [0, 1, 2]:
+                time.sleep(10)
+            else:
+                append_logs(
+                    YESTERDAY,
+                    "fail",
+                    f"Unexpected job state: {result.jobState}",
+                    "get_job_state",
+                    "Popbill",
+                )
+                return None, None
     except PopbillException as PE:
         append_logs(YESTERDAY, "fail", PE, "get_job_state", "Popbill")
+        return None, None
 
 
 def account_search():
-
-    YESTERDAY = get_yesterday()
-
     try:
         job_id, job_state = get_job_state()
+        if job_id is None or job_state is None:
+            return
+
         corp_num = "1468701679"
         trade_type = ["I", "O"]
         search_string = ""
@@ -81,47 +101,49 @@ def account_search():
         per_page = 500
         order = "A"
         user_id = "rdmts7"
-        if job_state == 3:
-            results = easyFinBankService.search(
-                CorpNum=corp_num,
-                JobID=job_id,
-                UserID=user_id,
-                TradeType=trade_type,
-                SearchString=search_string,
-                Page=page,
-                PerPage=per_page,
-                Order=order,
-            )
-            if results.list:
-                for result in results.list:
-                    try:
-                        values = [
-                            [
-                                result.tid,
-                                format_converter(result.trdate),
-                                result.trseral,
-                                format_converter(result.trdt),
-                                result.accIn,
-                                result.accOut,
-                                result.balance,
-                                result.remark1,
-                                result.remark2,
-                                result.remark3,
-                                result.remark4,
-                                result.regDT,
-                                result.memo,
-                            ]
+        print("account_search", YESTERDAY)
+        print("account_search", job_id)
+        print("account_search", job_state)
+        results = easyFinBankService.search(
+            CorpNum=corp_num,
+            JobID=job_id,
+            UserID=user_id,
+            TradeType=trade_type,
+            SearchString=search_string,
+            Page=page,
+            PerPage=per_page,
+            Order=order,
+        )
+        if results.list:
+            for result in results.list:
+                try:
+                    values = [
+                        [
+                            result.tid,
+                            format_converter(result.trdate),
+                            result.trseral,
+                            format_converter(result.trdt),
+                            result.accIn,
+                            result.accOut,
+                            result.balance,
+                            result.remark1,
+                            result.remark2,
+                            result.remark3,
+                            result.remark4,
+                            result.regDT,
+                            result.memo,
                         ]
-                        append_values(values)
-                    except Exception as err:
-                        append_logs(
-                            YESTERDAY, "fail", err, "account_search_list", "Popbill"
-                        )
-                    finally:
-                        time.sleep(1)
-            append_logs(
-                YESTERDAY, "success", results.total, "account_search_list", "Popbill"
-            )
+                    ]
+                    append_values(values)
+                except Exception as err:
+                    append_logs(
+                        YESTERDAY, "fail", err, "account_search_list", "Popbill"
+                    )
+                finally:
+                    time.sleep(1)
+        append_logs(
+            YESTERDAY, "success", results.total, "account_search_list", "Popbill"
+        )
     except PopbillException as PE:
         append_logs(YESTERDAY, "fail", PE, "account_search", "Popbill")
 
