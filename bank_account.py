@@ -9,10 +9,10 @@ load_dotenv()
 
 LINK_ID = os.environ.get("LinkID")
 SECRET_KEY = os.environ.get("SecretKey")
-IS_TEST = bool(os.environ.get("IsTest"))
-IP_RESTRICT_ON_OFF = bool(os.environ.get("IPRestrictOnOff"))
-USE_STATIC_IP = bool(os.environ.get("UseStaticIP"))
-USE_LOCAL_TIME_YN = bool(os.environ.get("UseLocalTimeYN"))
+IS_TEST = os.environ.get("IsTest") == "True"
+IP_RESTRICT_ON_OFF = os.environ.get("IPRestrictOnOff") == "True"
+USE_STATIC_IP = os.environ.get("UseStaticIP") == "True"
+USE_LOCAL_TIME_YN = os.environ.get("UseLocalTimeYN") == "True"
 
 # settings.py 작성한 LinkID, SecretKey를 이용해 EasyFinBankService 서비스 객체 생성
 easyFinBankService = EasyFinBankService(LINK_ID, SECRET_KEY)
